@@ -1,0 +1,25 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Detalle del Elemento</title>
+    <link rel="stylesheet" href="{% static 'css/detalle.css' %}" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Detalle del Elemento</h1>
+      <ul>
+        {% for key, value in elemento.items %}
+        <li><strong>{{ key }}:</strong> {{ value }}</li>
+        {% endfor %}
+      </ul>
+      <p>
+        <a href="{% url 'index' %}?puerto={{ puerto }}" class="back-link">
+          Volver a la lista
+        </a>
+      </p>
+    </div>
+  </body>
+</html>

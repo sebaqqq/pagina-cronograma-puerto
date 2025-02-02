@@ -1,0 +1,48 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Información de Puertos</title>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'css/index.css' %}"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Puerto Marítimo</h1>
+        <div class="select-container">
+          <form method="get">
+          <label for="puerto">Seleccione el Puerto:</label>
+          <select name="puerto" id="puerto">
+            <option value="Valparaíso" {% if puerto == "Valparaíso" %}selected{% endif %}>Valparaíso</option>
+            <option value="San Antonio" {% if puerto == "San Antonio" %}selected{% endif %}>San Antonio</option>
+          </select>
+          <button class="button" type="submit">Cargar Datos</button>
+          </form>
+        </div>
+      </header>
+
+      <h2>Información de Puertos</h2>
+
+      {% if datos %}
+      <div class="card-container">
+        {% load dict_extras %} {% for item in datos %}
+        <div class="card">
+          <a href="{% url 'detalle' forloop.counter0 %}?puerto={{ puerto }}">
+            <h3>{{ forloop.counter }}. {{ item|get_item:clave }}</h3>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p>No se encontraron datos para el puerto {{ puerto }}.</p>
+      {% endif %}
+    </div>
+  </body>
+</html>
