@@ -1,8 +1,7 @@
-# info/views.py
 import requests
 from bs4 import BeautifulSoup
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -43,7 +42,6 @@ def datos_valparaiso(url):
                 "Sitio": sitios[columna_idx - 1] if columna_idx - 1 < len(sitios) else "Sin Sitio"
             })
     
-  
     return [nave for nave in datos if nave["Nombre Nave"] != "N/A"]
 
 def datos_san_antonio(url):
@@ -77,14 +75,32 @@ def cargar_datos(opcion):
     return [], ""
 
 def index(request):
-    # Se obtiene el puerto seleccionado vía parámetros GET; por defecto Valparaíso
-    puerto = request.GET.get('puerto', 'Valparaíso')
+    if request.method == "POST":
+        puerto = request.POST.get('puerto', 'Valparaíso')
+    else:
+        puerto = request.GET.get('puerto', 'Valparaíso')
+        
     datos, clave = cargar_datos(puerto)
-    
+
+    if 'selected_ships' not in request.session:
+        request.session['selected_ships'] = {}
+    global_selected_ships = request.session['selected_ships']
+    selected_ships = global_selected_ships.get(puerto, [])
+
+    if request.method == "POST":
+        try:
+            selected_indices = [int(idx) for idx in request.POST.getlist('selected_ship')]
+        except ValueError:
+            selected_indices = []
+        global_selected_ships[puerto] = selected_indices
+        request.session['selected_ships'] = global_selected_ships
+        selected_ships = selected_indices
+
     context = {
         'puerto': puerto,
         'datos': datos,
         'clave': clave,
+        'selected_ships': selected_ships,
     }
     return render(request, 'info/index.html', context)
 
@@ -101,3 +117,63 @@ def detalle(request, index):
         'elemento': elemento,
     }
     return render(request, 'info/detalle.html', context)
+
+def seleccionar_naves(request):
+    if request.method == "POST":
+        seleccionados_valores = request.POST.getlist("selected_ship")
+        seleccionados = []
+        for valor in seleccionados_valores:
+            try:
+                puerto, idx_str = valor.split("-", 1)
+                idx = int(idx_str)
+                datos, clave = cargar_datos(puerto)
+                nave = datos[idx]
+                nave['Puerto'] = puerto
+                seleccionados.append(nave)
+            except (ValueError, IndexError):
+                continue  
+        context = {'seleccionados': seleccionados}
+        return render(request, 'info/seleccionados.html', context)
+    else:
+        datos_val, clave_val = cargar_datos("Valparaíso")
+        datos_sa, clave_sa = cargar_datos("San Antonio")
+        context = {
+            'datos_val': datos_val,
+            'clave_val': clave_val,
+            'datos_sa': datos_sa,
+            'clave_sa': clave_sa,
+        }
+        return render(request, 'info/seleccionar.html', context)  
+    
+def eliminar_nave(request, puerto, idx):
+    global_selected_ships = request.session.get('selected_ships', {})
+    selected_list = global_selected_ships.get(puerto, [])
+    if idx in selected_list:
+        selected_list.remove(idx)
+        global_selected_ships[puerto] = selected_list
+        request.session['selected_ships'] = global_selected_ships
+    return redirect(f"/?puerto={puerto}")
+
+def check_updates(request):
+    puerto = request.GET.get('puerto', 'Valparaíso')
+    datos, clave = cargar_datos(puerto)
+    
+    global_selected_ships = request.session.get('selected_ships', {})
+    selected_ships = global_selected_ships.get(puerto, [])
+
+    if 'last_info' not in request.session:
+        request.session['last_info'] = {}
+    last_info = request.session['last_info']
+    
+    updates = []
+    for idx in selected_ships:
+        if idx < len(datos):
+            current_ship = datos[idx]
+            key = f"{puerto}-{idx}"
+            if key in last_info and last_info[key] != current_ship:
+                updates.append(current_ship)
+
+            last_info[key] = current_ship
+            
+    request.session['last_info'] = last_info
+    return JsonResponse({'updates': updates})

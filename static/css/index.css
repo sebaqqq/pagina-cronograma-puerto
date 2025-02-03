@@ -2,12 +2,10 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  max-width: 100%;
-  max-height: 100vh;
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Noto Sans JP", serif;
   background-color: #f5f5f5;
   display: flex;
   justify-content: center;
@@ -76,12 +74,14 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
+  padding: 0px 10px 10px 10px;
 }
 
 .card {
-  background-color: #007bff;
-  color: white;
-  border-radius: 10px;
+  background-color: transparent;
+  border: 1px solid #4caf50;
+  color: black;
+  border-radius: 20px;
   padding: 15px;
   display: flex;
   flex-direction: column;
@@ -89,6 +89,8 @@ h2 {
   align-items: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease;
+  position: relative;
+  padding-top: 30px;
 }
 
 .card:hover {
@@ -114,4 +116,11 @@ h2 {
 
 .card a:hover {
   text-decoration: underline;
+}
+
+.select-item {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
 }
