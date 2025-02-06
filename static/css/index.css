@@ -1,36 +1,68 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 body {
   font-family: "Noto Sans JP", serif;
-  background-color: #f5f5f5;
+  background-color: #121212;
+  color: #e0e0e0;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  color: #333;
-}
-
-.container {
-  width: 100%;
-  max-width: 1200px;
+  height: auto;
+  min-height: 100vh;
   padding: 20px;
-  margin: 0 auto;
+  overflow-y: auto;
 }
 
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 40px;
+}
+
+.img-logo {
+  width: 55px;
+  height: 55px;
+  border-radius: 14px;
+}
+
+.container {
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 1300px;
+  padding: 20px;
+}
+
+.title-puerto-maritimo {
+  color: white;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
   margin-bottom: 20px;
 }
 
-h1 {
-  font-size: 24px;
-  color: #333;
+ul li {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #e0e0e0;
+}
+
+strong {
+  color: #4caf50;
+}
+
+a {
+  text-decoration: none;
+  color: #275037;
+  font-size: 16px;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 .select-container {
@@ -42,33 +74,62 @@ h1 {
 label {
   margin-right: 10px;
   font-weight: bold;
+  color: white;
 }
 
 select {
   padding: 10px;
   font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 2px solid #275037;
+  background-color: #1e1e1e;
+  border-radius: 20px;
   margin-right: 10px;
+  color: white;
 }
 
 button {
-  background-color: #4caf50;
+  background-color: #275037;
   margin-left: 20px;
   color: white;
-  padding: 10px 20px;
+  padding: 16px 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 20px;
   cursor: pointer;
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: #1a2b25;
 }
 
-h2 {
-  font-size: 20px;
-  margin-bottom: 20px;
+.btn-seleccionar {
+  background-color: #275037;
+  color: white;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 25px;
+  width: 100%;
+}
+
+.btn-seleccionar:hover {
+  background-color: #1a2b25;
+}
+
+.titlePuerto {
+  color: white;
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 40px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 20px;
+  text-align: center;
+  font-weight: bold;
+  color: #e0e0e0;
 }
 
 .card-container {
@@ -80,8 +141,8 @@ h2 {
 
 .card {
   background-color: transparent;
-  border: 1px solid #4caf50;
-  color: black;
+  border: 2px solid #275037;
+  color: white;
   border-radius: 20px;
   padding: 15px;
   display: flex;
@@ -124,22 +185,13 @@ h2 {
   top: 10px;
   right: 10px;
   z-index: 1;
-}
-
-@media screen and (max-width: 768px) {
-  .card-container {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    padding: 0px 5px 5px 5px;
-  }
-
-  .select-container {
-    flex-direction: column;
-    align-items: flex-start;
-    margin-bottom: 20px;
-  }
-
-  button {
-    width: 100%;
-    margin-left: 0;
-  }
+  color: white;
+  background-color: #275037;
+  border-radius: 50%;
+  width: 17px;
+  height: 17px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
 }
