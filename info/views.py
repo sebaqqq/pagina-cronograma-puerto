@@ -60,6 +60,9 @@ def datos_san_antonio(url):
         if len(columnas) >= len(encabezado_texto):  
             fila_datos = {encabezado_texto[i]: columnas[i].text.strip() for i in range(len(encabezado_texto))}
             datos.append(fila_datos)
+            
+            if all(value != '' for value in fila_datos.values()):
+                datos.append(fila_datos)
     
     return datos
 
