@@ -34,7 +34,7 @@
               <option value="Valparaíso" {% if puerto == "Valparaíso" %}selected{% endif %}>Valparaíso</option>
               <option value="San Antonio" {% if puerto == "San Antonio" %}selected{% endif %}>San Antonio</option>
             </select>
-            <button class="button" type="submit">Cargar Datos</button>
+            <button class="btn-cargar-datos" type="submit">Cargar Datos</button>
           </form>
         </div>
       </header>
@@ -49,8 +49,14 @@
               <li class="ship-item">
                 {{ datos|index:idx|get_item:clave }}
                 <div class="ship-links">
-                  <a href="{% url 'detalle' idx %}?puerto={{ puerto }}" class="view-details">Ver Detalle</a>
+                  <a href="#" class="view-details" data-idx="{{ idx }}" data-puerto="{{ puerto }}">Ver Detalle</a>
                   <a href="{% url 'eliminar_nave' puerto idx %}" class="remove-ship">Eliminar</a>
+                </div>
+                <div id="ship-details-{{ idx }}" class="ship-details" style="display: none; max-height: 0px; overflow: hidden; transition: max-height 0.5s ease-in-out;">
+                  <button class="close-details">Cerrar detalle</button> 
+                  <h3>Detalles de la nave</h3>
+                  <ul id="details-list-{{ idx }}">
+                  </ul>
                 </div>
               </li>
             {% endif %}
@@ -81,6 +87,7 @@
     </div>
 
     <script>
+      
       function checkUpdates() {
         var puerto = "{{ puerto }}";
         fetch("{% url 'check_updates' %}?puerto=" + encodeURIComponent(puerto))
@@ -99,6 +106,68 @@
       }
       setInterval(checkUpdates, 60000);
       checkUpdates();
+
+
+      document.querySelectorAll('.view-details').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          var idx = this.getAttribute('data-idx');
+          var puerto = this.getAttribute('data-puerto');
+  
+          var detailsSection = document.getElementById('ship-details-' + idx);
+          var viewDetailsButton = this; 
+          var removeButton = this.closest('.ship-item').querySelector('.remove-ship');  
+          var closeButton = detailsSection.querySelector('.close-details');
+  
+          if (detailsSection.style.display === 'none' || detailsSection.style.maxHeight === '0px') {
+            viewDetailsButton.style.display = 'none';
+            removeButton.style.display = 'none';
+
+            fetch(`/detalle/${idx}/?puerto=${puerto}`)
+              .then(response => response.json())
+              .then(data => {
+                  if (data.elemento) {
+                    var detailsList = document.getElementById('details-list-' + idx);
+                    detailsList.innerHTML = ''; 
+                    for (var key in data.elemento) {
+                      var li = document.createElement('li');
+                      li.innerHTML = '<strong>' + key + ':</strong> ' + data.elemento[key];
+                      detailsList.appendChild(li);
+                    }
+
+                    detailsSection.style.display = 'block'; 
+                    setTimeout(() => {
+                      detailsSection.style.maxHeight = detailsSection.scrollHeight + "px";
+                    }, 10);
+                  } else {
+                    alert('No se encontró la nave');
+                  }
+              })
+              .catch(error => {
+                  console.error('Error al cargar los detalles:', error);
+                  alert('Hubo un error al cargar los detalles. Intenta nuevamente.');
+              });
+          } else {
+            viewDetailsButton.style.display = 'inline-block'; 
+            removeButton.style.display = 'inline-block';
+
+            detailsSection.style.maxHeight = '0px';
+            setTimeout(() => { 
+                detailsSection.style.display = 'none'; 
+            }, 500); 
+          }
+  
+          closeButton.addEventListener('click', function() {
+            detailsSection.style.maxHeight = '0px';
+            setTimeout(() => {
+                detailsSection.style.display = 'none';
+            }, 500);
+
+            viewDetailsButton.style.display = 'inline-block';
+            removeButton.style.display = 'inline-block';
+          });
+        });
+      });
     </script>
   </body>
 </html>

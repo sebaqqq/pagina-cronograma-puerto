@@ -107,19 +107,36 @@ def index(request):
     }
     return render(request, 'info/index.html', context)
 
+# def detalle(request, index):
+#     puerto = request.GET.get('puerto', 'Valparaíso')
+#     datos, clave = cargar_datos(puerto)
+#     try:
+#         elemento = datos[index]
+#     except IndexError:
+#         return HttpResponse("Elemento no encontrado", status=404)
+    
+#     context = {
+#         'puerto': puerto,
+#         'elemento': elemento,
+#     }
+#     return render(request, 'info/detalle.html', context)
+
+
+
 def detalle(request, index):
     puerto = request.GET.get('puerto', 'Valparaíso')
     datos, clave = cargar_datos(puerto)
+    
     try:
         elemento = datos[index]
     except IndexError:
-        return HttpResponse("Elemento no encontrado", status=404)
+        return JsonResponse({"error": "Elemento no encontrado"}, status=404)
     
-    context = {
+    return JsonResponse({
         'puerto': puerto,
         'elemento': elemento,
-    }
-    return render(request, 'info/detalle.html', context)
+    })
+
 
 def seleccionar_naves(request):
     if request.method == "POST":

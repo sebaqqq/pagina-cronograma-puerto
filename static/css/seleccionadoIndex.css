@@ -67,3 +67,29 @@
   text-decoration: none;
   background-color: #e3001b;
 }
+
+.ship-details {
+  position: relative; /* Allow absolute positioning inside */
+}
+
+.close-details {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  color: #fff;
+  background: transparent;
+  border: 2px solid #cc0000;
+  border-radius: 20px;
+  width: 90px;
+  height: 30px;
+  text-align: center;
+  line-height: 30px;
+  cursor: pointer;
+}
+
+.close-details:hover {
+  background-color: #cc0000;
+  color: #fff;
+  text-decoration: none;
+}

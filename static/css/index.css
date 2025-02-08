@@ -87,7 +87,7 @@ select {
   color: white;
 }
 
-button {
+/* button {
   background-color: #275037;
   margin-left: 20px;
   color: white;
@@ -95,9 +95,25 @@ button {
   border: none;
   border-radius: 20px;
   cursor: pointer;
+} */
+
+/* button:hover {
+  background-color: #1a2b25;
+} */
+
+.btn-cargar-datos {
+  background-color: #275037;
+  color: white;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 25px;
+  width: 100%;
 }
 
-button:hover {
+.btn-cargar-datos:hover {
   background-color: #1a2b25;
 }
 
