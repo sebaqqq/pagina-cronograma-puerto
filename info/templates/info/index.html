@@ -53,8 +53,10 @@
                   <a href="{% url 'eliminar_nave' puerto idx %}" class="remove-ship">Eliminar</a>
                 </div>
                 <div id="ship-details-{{ idx }}" class="ship-details" style="display: none; max-height: 0px; overflow: hidden; transition: max-height 0.5s ease-in-out;">
-                  <button class="close-details">Cerrar detalle</button> 
-                  <h3>Detalles de la nave</h3>
+                  <button class="close-details" aria-label="Cerrar detalle">
+                    Cerrar detalle
+                  </button>                  
+                  <h3 class="title-detalle">Detalles de la nave</h3>
                   <ul id="details-list-{{ idx }}">
                   </ul>
                 </div>

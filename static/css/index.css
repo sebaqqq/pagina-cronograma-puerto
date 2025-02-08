@@ -87,7 +87,11 @@ select {
   color: white;
 }
 
-/* button {
+select:focus {
+  background-color: #275037;
+}
+
+button {
   background-color: #275037;
   margin-left: 20px;
   color: white;
@@ -95,25 +99,9 @@ select {
   border: none;
   border-radius: 20px;
   cursor: pointer;
-} */
-
-/* button:hover {
-  background-color: #1a2b25;
-} */
-
-.btn-cargar-datos {
-  background-color: #275037;
-  color: white;
-  padding: 16px 20px;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-bottom: 25px;
-  width: 100%;
 }
 
-.btn-cargar-datos:hover {
+button:hover {
   background-color: #1a2b25;
 }
 
@@ -210,4 +198,9 @@ select {
   justify-content: center;
   align-items: center;
   font-size: 12px;
+}
+
+.select-item:hover {
+  cursor: pointer;
+  background-color: #1a2b25;
 }
