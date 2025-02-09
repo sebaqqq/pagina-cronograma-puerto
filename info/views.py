@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -18,8 +18,23 @@ def datos_valparaiso(url):
             sitios.append(sitio_nombre)
     
     datos = []
-    for fila_idx in range(7):  
-        for columna_idx in range(1, 9): 
+    
+    fecha = []
+    for i in range(7):  
+        cellinfo = soup.find("div", class_=f"cellinfo-{i}-0")  
+        fecha_result = "fecha no disponible"
+        
+        if cellinfo:
+            dia_element = cellinfo.find("span", class_="text-dark pln-cell-fecha")
+            mes_element = dia_element.find_next("span", class_="text-dark pln-cell-fecha") if dia_element else None
+            
+            if dia_element and mes_element:
+                fecha_result = f"{dia_element.text.strip()} {mes_element.text.strip()}"
+        
+        fecha.append(fecha_result)
+
+    for fila_idx in range(7): 
+        for columna_idx in range(0, 9):  
             cellinfo = soup.find("div", class_=f"cellinfo-{fila_idx}-{columna_idx}")
             
             nombre_nave = ""
@@ -34,9 +49,10 @@ def datos_valparaiso(url):
                 nombre_nave = nombre_nave_element.text.strip() if nombre_nave_element else "N/A"
                 posicion = posicion_element.text.strip() if posicion_element else "N/A"
                 hora = hora_element.text.strip() if hora_element else "N/A"
-            
+
             datos.append({
                 "Nombre Nave": nombre_nave,
+                "Fecha": fecha[fila_idx],  
                 "Hora": hora,
                 "Posición": posicion,
                 "Sitio": sitios[columna_idx - 1] if columna_idx - 1 < len(sitios) else "Sin Sitio"
@@ -106,21 +122,6 @@ def index(request):
         'selected_ships': selected_ships,
     }
     return render(request, 'info/index.html', context)
-
-# def detalle(request, index):
-#     puerto = request.GET.get('puerto', 'Valparaíso')
-#     datos, clave = cargar_datos(puerto)
-#     try:
-#         elemento = datos[index]
-#     except IndexError:
-#         return HttpResponse("Elemento no encontrado", status=404)
-    
-#     context = {
-#         'puerto': puerto,
-#         'elemento': elemento,
-#     }
-#     return render(request, 'info/detalle.html', context)
-
 
 
 def detalle(request, index):
