@@ -26,7 +26,7 @@
     <div class="container">
       <header>
         <img src="{% static 'images/logo.jpg' %}" alt="Greenwish" class="img-logo" />
-        <h1 class="title-puerto-maritimo">Puerto Marítimo</h1>
+        <h1 class="title-puerto-maritimo">Greenwish Port Tracking</h1>
         <div class="select-container">
           <form method="get">
             <label for="puerto">Seleccione el Puerto:</label>
@@ -69,6 +69,14 @@
       <h2 class="titlePuerto">Información de naves:</h2>
 
       {% if datos %}
+      
+        <form method="POST" action="{% url 'descargar_excel' %}">
+          {% csrf_token %}
+          <input type="hidden" name="puerto" value="{{ puerto }}">
+          <button type="submit" name="descargar_excel" class="btn-seleccionar">Descargar Excel</button>
+        </form>
+    
+
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="puerto" value="{{ puerto }}">

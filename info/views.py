@@ -1,8 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import urllib3
+import openpyxl
+from openpyxl.utils import get_column_letter 
+# import json
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -60,7 +63,7 @@ def datos_valparaiso(url):
     
     return [nave for nave in datos if nave["Nombre Nave"] != "N/A"]
 
-def datos_san_antonio(url):
+def datos_san_antonio(url):  
     html_texto = requests.get(url, verify=False).text
     soup = BeautifulSoup(html_texto, 'html.parser')
     
@@ -89,6 +92,7 @@ def cargar_datos(opcion):
     elif opcion == "San Antonio":
         url = "https://gessup.puertosanantonio.com/Planificaciones/general.aspx"
         datos = datos_san_antonio(url)
+        # return datos, "Nombre Nave"
         return datos, "Nave"
     return [], ""
 
@@ -137,6 +141,85 @@ def detalle(request, index):
         'elemento': elemento,
     })
 
+def descargar_excel(request):
+    print("Entrando en la vista descargar_excel...")
+    
+    if 'descargar_excel' in request.POST:
+        print("Formulario recibido con la opción de descarga.")
+
+        puerto = request.POST.get('puerto', 'Valparaíso')
+        print(f"Puerto seleccionado: {puerto}")
+        
+        global_selected_ships = request.session.get('selected_ships', {})
+        seleccionados = global_selected_ships.get(puerto, [])
+        if not seleccionados:
+            print("No hay naves seleccionadas.")
+            return HttpResponse("No hay naves seleccionadas.", status=400)
+
+        datos_seleccionados = []
+        if puerto == 'Valparaíso':
+            datos, clave = cargar_datos("Valparaíso")
+        elif puerto == 'San Antonio':
+            datos, clave = cargar_datos("San Antonio")
+        else:
+            return HttpResponse("Puerto no válido.", status=400)
+
+        for idx in seleccionados:
+            if idx < len(datos):
+                datos_seleccionados.append(datos[idx])
+
+        if not datos_seleccionados:
+            print("No se encontraron datos de las naves seleccionadas.")
+            return HttpResponse("No se encontraron datos de las naves seleccionadas.", status=400)
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Naves Seleccionadas"
+
+        if puerto == 'Valparaíso':
+            encabezados = ["Nombre Nave", "Fecha", "Hora", "Posición", "Sitio"]
+        elif puerto == 'San Antonio':
+            encabezados = ["Nave", "E.T.A.", "Agencia", "Eslora", "Terminal", "Emp. muellaje", "Carga", "Detalle", "Cantidad", "Operación"]
+        
+        ws.append(encabezados)
+
+        for nave in datos_seleccionados:
+            if puerto == 'Valparaíso':
+                row = [
+                    nave.get("Nombre Nave", "N/A"),
+                    nave.get("Fecha", "N/A"),
+                    nave.get("Hora", "N/A"),
+                    nave.get("Posición", "N/A"),
+                    nave.get("Sitio", "Sin Sitio"),
+                ]
+            elif puerto == 'San Antonio':
+                row = [
+                    nave.get("Nave", "N/A"),
+                    nave.get("E.T.A.", "N/A"),
+                    nave.get("Agencia", "N/A"),
+                    nave.get("Eslora", "N/A"),
+                    nave.get("Terminal", "N/A"),
+                    nave.get("Emp. muellaje", "N/A"),
+                    nave.get("Carga", "N/A"),
+                    nave.get("Detalle", "N/A"),
+                    nave.get("Cantidad", "N/A"),
+                    nave.get("Operación", "N/A"),
+                ]
+            ws.append(row)
+
+        for col_num in range(1, len(encabezados) + 1):
+            column_letter = get_column_letter(col_num)
+            ws.column_dimensions[column_letter].width = 20
+
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response['Content-Disposition'] = f'attachment; filename=naves_seleccionadas_{puerto}.xlsx'
+        
+        wb.save(response)
+
+        return response
+    else:
+        print("Solicitud no válida")
+        return HttpResponse("Solicitud no válida", status=400)
 
 def seleccionar_naves(request):
     if request.method == "POST":
@@ -152,6 +235,12 @@ def seleccionar_naves(request):
                 seleccionados.append(nave)
             except (ValueError, IndexError):
                 continue  
+
+        request.session['selected_ships'] = seleccionados
+
+        if "descargar_excel" in request.POST:
+            return descargar_excel(request)
+
         context = {'seleccionados': seleccionados}
         return render(request, 'info/seleccionados.html', context)
     else:
@@ -163,8 +252,9 @@ def seleccionar_naves(request):
             'datos_sa': datos_sa,
             'clave_sa': clave_sa,
         }
-        return render(request, 'info/seleccionar.html', context)  
-    
+        return render(request, 'info/seleccionar.html', context)
+
+
 def eliminar_nave(request, puerto, idx):
     global_selected_ships = request.session.get('selected_ships', {})
     selected_list = global_selected_ships.get(puerto, [])
@@ -197,3 +287,104 @@ def check_updates(request):
             
     request.session['last_info'] = last_info
     return JsonResponse({'updates': updates})
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def datos_san_antonio(url):
+#     html_texto = requests.get(url, verify=False).text
+#     soup = BeautifulSoup(html_texto, 'html.parser')
+    
+#     # Verificar si la tabla contiene la clase correcta
+#     tabla = soup.find('table', class_='planificacion')
+#     if not tabla:
+#         print("No se encontró la tabla con la clase 'planificacion'")
+#         return []
+
+#     # Buscar todas las tablas dentro de las celdas (tr > td > table)
+#     tablas = soup.select('.planificacion > tbody > tr > td > table')
+#     datos = []
+
+#     for tabla_interna in tablas:
+#         # Obtener el contenido de las celdas dentro de esta tabla interna
+#         celdas = tabla_interna.find_all('td')
+        
+#         # Asegurarse de que hay suficientes celdas y que no estamos extrayendo información no deseada
+#         if len(celdas) >= 4:
+#             # Extraer el texto de cada celda
+#             nave_nombre = celdas[0].text.strip()
+#             hora_inicio = celdas[1].text.strip()
+#             hora_fin = celdas[2].text.strip()
+#             metros = celdas[3].text.strip()
+#             nombre_buque = celdas[4].text.strip() if len(celdas) > 4 else ''
+
+#             # Filtrar filas que contienen "Longitud", "Calado", "Sitio", etc.
+#             if 'Sitio' in nave_nombre or 'Longitud' in nave_nombre or 'Calado' in nave_nombre:
+#                 continue  # Ignorar esta fila si contiene datos no deseados
+
+#             # Guardar la información en un diccionario
+#             datos.append({
+#                 'Nombre Nave': nave_nombre,
+#                 'Hora Inicio': hora_inicio,
+#                 'Hora Fin': hora_fin,
+#                 'Metros': metros,
+#                 'Nombre Buque': nombre_buque
+#             })
+
+#     # Verificar los datos extraídos
+#     print("Datos extraídos:", datos)
+#     return datos
+
+
+# def datos_san_antonio(url):
+#     html_texto = requests.get(url, verify=False).text
+#     soup = BeautifulSoup(html_texto, 'html.parser')
+    
+#     # Verificar si la tabla contiene la clase correcta
+#     tabla = soup.find('table', class_='planificacion')
+#     if not tabla:
+#         print("No se encontró la tabla con la clase 'planificacion'")
+#         return []
+
+#     # Buscar todas las filas de la tabla
+#     filas = tabla.find_all('tr')
+#     datos = []
+
+#     # Iterar sobre cada fila para extraer los datos de las celdas
+#     for fila in filas:
+#         celdas = fila.find_all('td')
+        
+#         # Verificar que la fila tiene al menos 4 celdas y no contiene datos no deseados
+#         if len(celdas) >= 4:
+#         # Extraer el texto de cada celda y guardarla en un diccionario
+#             nave_nombre = celdas[0].text.strip()
+#             hora_inicio = celdas[1].text.strip()
+#             hora_fin = celdas[2].text.strip()
+#             metros = celdas[3].text.strip()
+#             nombre_buque = celdas[4].text.strip() if len(celdas) > 4 else ''
+
+#             # Filtrar filas que contienen "Longitud", "Calado", "Sitio", etc.
+#             if 'Sitio' in nave_nombre or 'Longitud' in nave_nombre or 'Calado' in nave_nombre:
+#                 continue  # Ignorar esta fila si contiene datos no deseados
+
+#             # Guardar la información en un diccionario
+#             datos.append({
+#                 'Nombre Nave': nave_nombre,
+#                 'Hora Inicio': hora_inicio,
+#                 'Hora Fin': hora_fin,
+#                 'Metros': metros,
+#                 'Nombre Buque': nombre_buque
+#             })
+
+#     # Verificar los datos extraídos
+#     print(json.dumps(datos, indent=4))
+#     return datos
