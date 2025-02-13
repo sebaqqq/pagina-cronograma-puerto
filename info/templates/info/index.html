@@ -77,22 +77,22 @@
         </form>
     
 
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="puerto" value="{{ puerto }}">
-        <button class="btn-seleccionar" type="submit">Seleccionar Naves</button>
-        <div class="card-container">
-          {% for item in datos %}
-            <div class="card">
-              <input type="checkbox" name="selected_ship" value="{{ forloop.counter0 }}"
-                {% if forloop.counter0 in selected_ships %}checked{% endif %} class="select-item">
-              <label>{{ forloop.counter }}. {{ item|get_item:clave }}</label>
-            </div>
-          {% endfor %}
-        </div>
-      </form>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="puerto" value="{{ puerto }}">
+          <button class="btn-seleccionar" type="submit">Seleccionar Naves</button>
+          <div class="card-container">
+            {% for item in datos %}
+              <div class="card">
+                <input type="checkbox" name="selected_ship" value="{{ forloop.counter0 }}"
+                  {% if forloop.counter0 in selected_ships %}checked{% endif %} class="select-item">
+                <label>{{ forloop.counter }}. {{ item|get_item:clave }}</label>
+              </div>
+            {% endfor %}
+          </div>
+        </form>
       {% else %}
-      <p>No se encontraron datos para el puerto {{ puerto }}.</p>
+        <p>No se encontraron datos para el puerto {{ puerto }}.</p>
       {% endif %}
     </div>
 

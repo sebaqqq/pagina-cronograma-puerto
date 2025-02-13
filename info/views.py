@@ -4,7 +4,8 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 import urllib3
 import openpyxl
-from openpyxl.utils import get_column_letter 
+from openpyxl.utils import get_column_letter
+import xlsxwriter 
 # import json
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -147,74 +148,61 @@ def descargar_excel(request):
     if 'descargar_excel' in request.POST:
         print("Formulario recibido con la opción de descarga.")
 
-        puerto = request.POST.get('puerto', 'Valparaíso')
-        print(f"Puerto seleccionado: {puerto}")
-        
         global_selected_ships = request.session.get('selected_ships', {})
-        seleccionados = global_selected_ships.get(puerto, [])
-        if not seleccionados:
+        seleccionados_valparaiso = global_selected_ships.get('Valparaíso', [])
+        seleccionados_san_antonio = global_selected_ships.get('San Antonio', [])
+        
+        if not seleccionados_valparaiso and not seleccionados_san_antonio:
             print("No hay naves seleccionadas.")
             return HttpResponse("No hay naves seleccionadas.", status=400)
-
-        datos_seleccionados = []
-        if puerto == 'Valparaíso':
-            datos, clave = cargar_datos("Valparaíso")
-        elif puerto == 'San Antonio':
-            datos, clave = cargar_datos("San Antonio")
-        else:
-            return HttpResponse("Puerto no válido.", status=400)
-
-        for idx in seleccionados:
-            if idx < len(datos):
-                datos_seleccionados.append(datos[idx])
-
-        if not datos_seleccionados:
-            print("No se encontraron datos de las naves seleccionadas.")
-            return HttpResponse("No se encontraron datos de las naves seleccionadas.", status=400)
-
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Naves Seleccionadas"
-
-        if puerto == 'Valparaíso':
-            encabezados = ["Nombre Nave", "Fecha", "Hora", "Posición", "Sitio"]
-        elif puerto == 'San Antonio':
-            encabezados = ["Nave", "E.T.A.", "Agencia", "Eslora", "Terminal", "Emp. muellaje", "Carga", "Detalle", "Cantidad", "Operación"]
         
-        ws.append(encabezados)
+        datos_seleccionados_valparaiso = []
+        datos_seleccionados_san_antonio = []
 
-        for nave in datos_seleccionados:
-            if puerto == 'Valparaíso':
-                row = [
-                    nave.get("Nombre Nave", "N/A"),
-                    nave.get("Fecha", "N/A"),
-                    nave.get("Hora", "N/A"),
-                    nave.get("Posición", "N/A"),
-                    nave.get("Sitio", "Sin Sitio"),
-                ]
-            elif puerto == 'San Antonio':
-                row = [
-                    nave.get("Nave", "N/A"),
-                    nave.get("E.T.A.", "N/A"),
-                    nave.get("Agencia", "N/A"),
-                    nave.get("Eslora", "N/A"),
-                    nave.get("Terminal", "N/A"),
-                    nave.get("Emp. muellaje", "N/A"),
-                    nave.get("Carga", "N/A"),
-                    nave.get("Detalle", "N/A"),
-                    nave.get("Cantidad", "N/A"),
-                    nave.get("Operación", "N/A"),
-                ]
-            ws.append(row)
+        datos_valparaiso, clave_valparaiso = cargar_datos("Valparaíso")
+        for idx in seleccionados_valparaiso:
+            if idx < len(datos_valparaiso):
+                datos_seleccionados_valparaiso.append(datos_valparaiso[idx])
 
-        for col_num in range(1, len(encabezados) + 1):
-            column_letter = get_column_letter(col_num)
-            ws.column_dimensions[column_letter].width = 20
+        datos_san_antonio, clave_san_antonio = cargar_datos("San Antonio")
+        for idx in seleccionados_san_antonio:
+            if idx < len(datos_san_antonio):
+                datos_seleccionados_san_antonio.append(datos_san_antonio[idx])
 
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response['Content-Disposition'] = f'attachment; filename=naves_seleccionadas_{puerto}.xlsx'
+        response['Content-Disposition'] = 'attachment; filename=naves_seleccionadas.xlsx'
         
-        wb.save(response)
+        workbook = xlsxwriter.Workbook(response)
+        
+        ws_valparaíso = workbook.add_worksheet("Valparaíso")
+        encabezados_valparaiso = ["Nombre Nave", "Fecha", "Hora"]
+        ws_valparaíso.write_row('A1', encabezados_valparaiso)
+
+        for i, nave in enumerate(datos_seleccionados_valparaiso, start=1):
+            row = [
+                nave.get("Nombre Nave", "N/A"),
+                nave.get("Fecha", "N/A"),
+                nave.get("Hora", "N/A"),
+            ]
+            ws_valparaíso.write_row(f'A{i+1}', row)
+
+        ws_valparaíso.set_tab_color('green')
+
+        ws_sanantonio = workbook.add_worksheet("San Antonio")
+        encabezados_sanantonio = ["Nave", "E.T.A.", "Operación"]
+        ws_sanantonio.write_row('A1', encabezados_sanantonio)
+
+        for i, nave in enumerate(datos_seleccionados_san_antonio, start=1):
+            row = [
+                nave.get("Nave", "N/A"),
+                nave.get("E.T.A.", "N/A"),
+                nave.get("Operación", "N/A"),
+            ]
+            ws_sanantonio.write_row(f'A{i+1}', row)
+
+        ws_sanantonio.set_tab_color('blue')
+
+        workbook.close()
 
         return response
     else:
