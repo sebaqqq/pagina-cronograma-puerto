@@ -180,9 +180,9 @@ def descargar_excel(request):
 
         for i, nave in enumerate(datos_seleccionados_valparaiso, start=1):
             row = [
-                nave.get("Nombre Nave", "N/A"),
-                nave.get("Fecha", "N/A"),
-                nave.get("Hora", "N/A"),
+                nave.get("Nombre Nave", "Pending"),
+                nave.get("Fecha", "Pending"),
+                nave.get("Hora", "Pending"),
             ]
             ws_valparaíso.write_row(f'A{i+1}', row)
 
@@ -194,9 +194,9 @@ def descargar_excel(request):
 
         for i, nave in enumerate(datos_seleccionados_san_antonio, start=1):
             row = [
-                nave.get("Nave", "N/A"),
-                nave.get("E.T.A.", "N/A"),
-                nave.get("Operación", "N/A"),
+                nave.get("Nave", "Pending"),
+                nave.get("E.T.A.", "Pending"),
+                nave.get("Operación", "Pending"),
             ]
             ws_sanantonio.write_row(f'A{i+1}', row)
 
