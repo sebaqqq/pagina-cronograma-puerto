@@ -250,7 +250,7 @@ def descargar_excel(request):
         ws_valparaíso.set_tab_color('green')
         
         ws_sanantonio = workbook.add_worksheet("San Antonio")
-        encabezados_sanantonio = ["Nave", "Fecha", "Hora"]
+        encabezados_sanantonio = ["Nombre Nave", "Fecha", "Hora"]
         ws_sanantonio.write_row('A1', encabezados_sanantonio)
 
         for i, nave in enumerate(datos_seleccionados_san_antonio, start=1):
