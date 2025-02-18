@@ -6,7 +6,14 @@ import urllib3
 import openpyxl
 from openpyxl.utils import get_column_letter
 import xlsxwriter 
-# import json
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
+import time
+import re
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -61,29 +68,84 @@ def datos_valparaiso(url):
                 "Posición": posicion,
                 "Sitio": sitios[columna_idx - 1] if columna_idx - 1 < len(sitios) else "Sin Sitio"
             })
-    
+            
     return [nave for nave in datos if nave["Nombre Nave"] != "N/A"]
 
-def datos_san_antonio(url):  
-    html_texto = requests.get(url, verify=False).text
-    soup = BeautifulSoup(html_texto, 'html.parser')
+def datos_san_antonio(url):
+    try:
+        options = Options()
+        options.headless = True  
+
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        
+        driver.get(url)
+
+        time.sleep(5) 
+        
+        html_texto = driver.page_source
+        
+        soup = BeautifulSoup(html_texto, 'html.parser')
+
+        fechas = soup.select('.planificacion > tbody > tr > .titulo')
+        fechas_texto = [fecha.get_text(strip=True).replace('\n', '') for fecha in fechas]
+        
+        if fechas_texto:
+            print(f"Fechas encontradas: {fechas_texto}")
+        else:
+            print("No se encontraron fechas con el selector CSS especificado.")
+        
+        celdas = soup.select('.planificacion > tbody > tr > td > table')
+                
+        if not celdas:
+            print("No se encontraron celdas con el selector CSS especificado.")
+            driver.quit()  
+            return []
     
-    encabezados_tr = soup.find('tr', class_='GridViewHeader')
-    encabezados = encabezados_tr.find_all('th') if encabezados_tr else []
-    encabezado_texto = [encabezado.text.strip() for encabezado in encabezados]
-    
-    filas = soup.find_all('tr', class_='GridView')
-    
-    datos = []
-    for fila in filas:
-        columnas = fila.find_all('td')
-        if len(columnas) >= len(encabezado_texto):  
-            fila_datos = {encabezado_texto[i]: columnas[i].text.strip() for i in range(len(encabezado_texto))}
-            
-            if all(value != '' for value in fila_datos.values()):
-                datos.append(fila_datos)
-    
-    return datos
+        datos = []
+        fecha_index = 0 
+        celdas_por_fecha = 7 
+
+        for i, celda in enumerate(celdas):
+            texto = celda.get_text(strip=True).replace('\n', '')
+
+            if texto:
+                hora = None
+                metros = None
+                nave = None
+                
+                fecha = fechas_texto[fecha_index]
+                
+                hora_match = re.search(r'(\d{2}:\d{2})', texto)
+                if hora_match:
+                    hora = hora_match.group(0)
+                
+                metros_match = re.search(r'(\d+\.?\d*)m', texto)
+                if metros_match:
+                    metros = metros_match.group(0)
+
+                nave_match = re.search(r'([A-Z\s]+)', texto)
+                if nave_match:
+                    nave = nave_match.group(0).strip()
+
+                if hora and metros and nave is None:
+                    nave = texto.replace(hora, '').replace(metros, '').strip()
+
+                datos.append({
+                    'fecha': fecha, 
+                    'hora': hora if hora else None,  
+                    'metros': metros if metros else None,  
+                    'nave': nave if nave else None  
+                })
+                
+                if (i + 1) % celdas_por_fecha == 0 and fecha_index + 1 < len(fechas_texto):
+                    fecha_index += 1  
+
+        driver.quit()  
+        return datos
+
+    except Exception as e:
+        print(f"Ocurrió un error: {e}")
+        return []
 
 def cargar_datos(opcion):
     if opcion == "Valparaíso":
@@ -93,8 +155,7 @@ def cargar_datos(opcion):
     elif opcion == "San Antonio":
         url = "https://gessup.puertosanantonio.com/Planificaciones/general.aspx"
         datos = datos_san_antonio(url)
-        # return datos, "Nombre Nave"
-        return datos, "Nave"
+        return datos, "nave"
     return [], ""
 
 def index(request):
@@ -187,16 +248,16 @@ def descargar_excel(request):
             ws_valparaíso.write_row(f'A{i+1}', row)
 
         ws_valparaíso.set_tab_color('green')
-
+        
         ws_sanantonio = workbook.add_worksheet("San Antonio")
-        encabezados_sanantonio = ["Nave", "E.T.A.", "Operación"]
+        encabezados_sanantonio = ["Nave", "Fecha", "Hora"]
         ws_sanantonio.write_row('A1', encabezados_sanantonio)
 
         for i, nave in enumerate(datos_seleccionados_san_antonio, start=1):
             row = [
-                nave.get("Nave", "Pending"),
-                nave.get("E.T.A.", "Pending"),
-                nave.get("Operación", "Pending"),
+                nave.get("nave", "Pending"),
+                nave.get("fecha", "Pending"),
+                nave.get("hora", "Pending"),
             ]
             ws_sanantonio.write_row(f'A{i+1}', row)
 
@@ -209,6 +270,7 @@ def descargar_excel(request):
         print("Solicitud no válida")
         return HttpResponse("Solicitud no válida", status=400)
 
+    
 def seleccionar_naves(request):
     if request.method == "POST":
         seleccionados_valores = request.POST.getlist("selected_ship")
@@ -275,104 +337,3 @@ def check_updates(request):
             
     request.session['last_info'] = last_info
     return JsonResponse({'updates': updates})
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def datos_san_antonio(url):
-#     html_texto = requests.get(url, verify=False).text
-#     soup = BeautifulSoup(html_texto, 'html.parser')
-    
-#     # Verificar si la tabla contiene la clase correcta
-#     tabla = soup.find('table', class_='planificacion')
-#     if not tabla:
-#         print("No se encontró la tabla con la clase 'planificacion'")
-#         return []
-
-#     # Buscar todas las tablas dentro de las celdas (tr > td > table)
-#     tablas = soup.select('.planificacion > tbody > tr > td > table')
-#     datos = []
-
-#     for tabla_interna in tablas:
-#         # Obtener el contenido de las celdas dentro de esta tabla interna
-#         celdas = tabla_interna.find_all('td')
-        
-#         # Asegurarse de que hay suficientes celdas y que no estamos extrayendo información no deseada
-#         if len(celdas) >= 4:
-#             # Extraer el texto de cada celda
-#             nave_nombre = celdas[0].text.strip()
-#             hora_inicio = celdas[1].text.strip()
-#             hora_fin = celdas[2].text.strip()
-#             metros = celdas[3].text.strip()
-#             nombre_buque = celdas[4].text.strip() if len(celdas) > 4 else ''
-
-#             # Filtrar filas que contienen "Longitud", "Calado", "Sitio", etc.
-#             if 'Sitio' in nave_nombre or 'Longitud' in nave_nombre or 'Calado' in nave_nombre:
-#                 continue  # Ignorar esta fila si contiene datos no deseados
-
-#             # Guardar la información en un diccionario
-#             datos.append({
-#                 'Nombre Nave': nave_nombre,
-#                 'Hora Inicio': hora_inicio,
-#                 'Hora Fin': hora_fin,
-#                 'Metros': metros,
-#                 'Nombre Buque': nombre_buque
-#             })
-
-#     # Verificar los datos extraídos
-#     print("Datos extraídos:", datos)
-#     return datos
-
-
-# def datos_san_antonio(url):
-#     html_texto = requests.get(url, verify=False).text
-#     soup = BeautifulSoup(html_texto, 'html.parser')
-    
-#     # Verificar si la tabla contiene la clase correcta
-#     tabla = soup.find('table', class_='planificacion')
-#     if not tabla:
-#         print("No se encontró la tabla con la clase 'planificacion'")
-#         return []
-
-#     # Buscar todas las filas de la tabla
-#     filas = tabla.find_all('tr')
-#     datos = []
-
-#     # Iterar sobre cada fila para extraer los datos de las celdas
-#     for fila in filas:
-#         celdas = fila.find_all('td')
-        
-#         # Verificar que la fila tiene al menos 4 celdas y no contiene datos no deseados
-#         if len(celdas) >= 4:
-#         # Extraer el texto de cada celda y guardarla en un diccionario
-#             nave_nombre = celdas[0].text.strip()
-#             hora_inicio = celdas[1].text.strip()
-#             hora_fin = celdas[2].text.strip()
-#             metros = celdas[3].text.strip()
-#             nombre_buque = celdas[4].text.strip() if len(celdas) > 4 else ''
-
-#             # Filtrar filas que contienen "Longitud", "Calado", "Sitio", etc.
-#             if 'Sitio' in nave_nombre or 'Longitud' in nave_nombre or 'Calado' in nave_nombre:
-#                 continue  # Ignorar esta fila si contiene datos no deseados
-
-#             # Guardar la información en un diccionario
-#             datos.append({
-#                 'Nombre Nave': nave_nombre,
-#                 'Hora Inicio': hora_inicio,
-#                 'Hora Fin': hora_fin,
-#                 'Metros': metros,
-#                 'Nombre Buque': nombre_buque
-#             })
-
-#     # Verificar los datos extraídos
-#     print(json.dumps(datos, indent=4))
-#     return datos
