@@ -158,12 +158,26 @@ def datos_san_antonio(url):
 def cargar_datos(opcion):
     if opcion == "Valparaíso":
         url = "https://pln.puertovalparaiso.cl/pln/"
-        datos = datos_valparaiso(url)
-        return datos, "Nombre Nave"
+        try:
+            response = requests.get(url, verify=False)
+            response.raise_for_status() 
+            datos = datos_valparaiso(url)
+            return datos, "Nombre Nave"
+        except requests.exceptions.RequestException as e:
+            print(f"Error al acceder a la página de Valparaíso: {e}")
+            return [], "Error de conexión a Valparaíso"
+    
     elif opcion == "San Antonio":
         url = "https://gessup.puertosanantonio.com/Planificaciones/general.aspx"
-        datos = datos_san_antonio(url)
-        return datos, "nave"
+        try:
+            response = requests.get(url, verify=False)
+            response.raise_for_status()
+            datos = datos_san_antonio(url)
+            return datos, "nave"
+        except requests.exceptions.RequestException as e:
+            print(f"Error al acceder a la página de San Antonio: {e}")
+            return [], "Error de conexión a San Antonio"
+
     return [], ""
 
 def index(request):
