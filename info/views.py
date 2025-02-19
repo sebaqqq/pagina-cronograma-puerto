@@ -264,7 +264,6 @@ def descargar_excel(request):
         workbook = xlsxwriter.Workbook(response)
         date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
 
-        # Hoja para Valparaíso
         ws_valparaiso = workbook.add_worksheet("Valparaíso")
         encabezados_valparaiso = ["Nombre Nave", "Fecha", "Hora"]
         ws_valparaiso.write_row('A1', encabezados_valparaiso)
