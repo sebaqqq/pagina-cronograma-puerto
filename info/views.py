@@ -211,73 +211,6 @@ def detalle(request, index):
         'elemento': elemento,
     })
 
-# def descargar_excel(request):
-#     print("Entrando en la vista descargar_excel...")
-    
-#     if 'descargar_excel' in request.POST:
-#         print("Formulario recibido con la opción de descarga.")
-
-#         global_selected_ships = request.session.get('selected_ships', {})
-#         seleccionados_valparaiso = global_selected_ships.get('Valparaíso', [])
-#         seleccionados_san_antonio = global_selected_ships.get('San Antonio', [])
-        
-#         if not seleccionados_valparaiso and not seleccionados_san_antonio:
-#             print("No hay naves seleccionadas.")
-#             return HttpResponse("No hay naves seleccionadas.", status=400)
-        
-#         datos_seleccionados_valparaiso = []
-#         datos_seleccionados_san_antonio = []
-
-#         datos_valparaiso, clave_valparaiso = cargar_datos("Valparaíso")
-#         for idx in seleccionados_valparaiso:
-#             if idx < len(datos_valparaiso):
-#                 datos_seleccionados_valparaiso.append(datos_valparaiso[idx])
-
-#         datos_san_antonio, clave_san_antonio = cargar_datos("San Antonio")
-#         for idx in seleccionados_san_antonio:
-#             if idx < len(datos_san_antonio):
-#                 datos_seleccionados_san_antonio.append(datos_san_antonio[idx])
-
-#         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-#         response['Content-Disposition'] = 'attachment; filename=naves_seleccionadas.xlsx'
-        
-#         workbook = xlsxwriter.Workbook(response)
-        
-#         ws_valparaíso = workbook.add_worksheet("Valparaíso")
-#         encabezados_valparaiso = ["Nombre Nave", "Fecha", "Hora"]
-#         ws_valparaíso.write_row('A1', encabezados_valparaiso)
-
-#         for i, nave in enumerate(datos_seleccionados_valparaiso, start=1):
-#             row = [
-#                 nave.get("Nombre Nave", "Pending"),
-#                 nave.get("Fecha", "Pending"),
-#                 nave.get("Hora", "Pending"),
-#             ]
-#             ws_valparaíso.write_row(f'A{i+1}', row)
-
-#         ws_valparaíso.set_tab_color('green')
-        
-#         ws_sanantonio = workbook.add_worksheet("San Antonio")
-#         encabezados_sanantonio = ["Nombre Nave", "Fecha", "Hora"]
-#         ws_sanantonio.write_row('A1', encabezados_sanantonio)
-
-#         for i, nave in enumerate(datos_seleccionados_san_antonio, start=1):
-#             row = [
-#                 nave.get("nave", "Pending"),
-#                 nave.get("fecha", "Pending"),
-#                 nave.get("hora", "Pending"),
-#             ]
-#             ws_sanantonio.write_row(f'A{i+1}', row)
-
-#         ws_sanantonio.set_tab_color('blue')
-
-#         workbook.close()
-
-#         return response
-#     else:
-#         print("Solicitud no válida")
-#         return HttpResponse("Solicitud no válida", status=400)
-
 def parse_fecha(fecha_str, origen="valparaiso"):
     try:
         parts = fecha_str.split()
@@ -377,41 +310,6 @@ def descargar_excel(request):
     else:
         print("Solicitud no válida")
         return HttpResponse("Solicitud no válida", status=400)
-
-
-# def seleccionar_naves(request):
-#     if request.method == "POST":
-#         seleccionados_valores = request.POST.getlist("selected_ship")
-#         seleccionados = []
-#         for valor in seleccionados_valores:
-#             try:
-#                 puerto, idx_str = valor.split("-", 1)
-#                 idx = int(idx_str)
-#                 datos, clave = cargar_datos(puerto)
-#                 nave = datos[idx]
-#                 nave['Puerto'] = puerto
-#                 seleccionados.append(nave)
-#             except (ValueError, IndexError):
-#                 continue  
-
-#         request.session['selected_ships'] = seleccionados
-
-#         if "descargar_excel" in request.POST:
-#             return descargar_excel(request)
-
-#         context = {'seleccionados': seleccionados}
-#         return render(request, 'info/seleccionados.html', context)
-#     else:
-#         datos_val, clave_val = cargar_datos("Valparaíso")
-#         datos_sa, clave_sa = cargar_datos("San Antonio")
-#         context = {
-#             'datos_val': datos_val,
-#             'clave_val': clave_val,
-#             'datos_sa': datos_sa,
-#             'clave_sa': clave_sa,
-#         }
-#         return render(request, 'info/seleccionar.html', context)
-
 
 def seleccionar_naves(request):
     if request.method == "POST":
